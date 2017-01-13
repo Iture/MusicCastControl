@@ -1,8 +1,9 @@
-import time
-import socket
-import select
-import multiprocessing
 import logging
+import multiprocessing
+import select
+import socket
+import time
+
 
 class EventListener (multiprocessing.Process):
     def __init__(self,messageQ, commandQ, config):
@@ -23,7 +24,7 @@ class EventListener (multiprocessing.Process):
     def run(self):
         while True:
             addr, message = self.get_event(1)
-            if message and 'play_time' not in str(message):
+            if message and 'main' in str(message):
                 data_out = {
                     'method': 'command',
                     'topic': message,
@@ -33,6 +34,7 @@ class EventListener (multiprocessing.Process):
                     'qos': 1,
                     'timestamp': time.time()
                 }
+                self.logger.debug("update message:%s" % data_out)
                 self.__commandQ.put(data_out)
 
 

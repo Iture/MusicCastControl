@@ -1,19 +1,20 @@
-import MusicCastAPI
-import time
-import multiprocessing
 import logging
+import multiprocessing
+import time
 
+import MusicCastAPI
 
 
 class MusicCastWorker(multiprocessing.Process):
 
     def __init__(self,messageQ, commandQ, config):
-        self.__messageQ=messageQ
-        self.__commandQ=commandQ
-        self.devices={}
+        self.logger = logging.getLogger('MusicCast.Worker')
+        self.__messageQ = messageQ
+        self.__commandQ = commandQ
+        self.devices = {}
         self.notification_port = config['mc_notification_port']
-        self.last_update=0
-        self.update_interval=config['mc_status_update_interval']
+        self.last_update = 0
+        self.update_interval = config['mc_status_update_interval']
         multiprocessing.Process.__init__(self)
         for dev in config['mc_devices']:
             self.get_device(dev)
@@ -31,7 +32,7 @@ class MusicCastWorker(multiprocessing.Process):
                     if task['method'] == 'command':
                         param = task['param']
                         if param == 'volume':
-                            self.get_device(task['deviceId']).set_volume(task['payload'])
+                            self.get_device(task['deviceId']).set_volume(int(task['payload']))
                         elif param == 'power':
                             self.get_device(task['deviceId']).set_power_state(task['payload'])
                         elif param == 'input':
@@ -39,12 +40,16 @@ class MusicCastWorker(multiprocessing.Process):
                         elif param == 'sound_program':
                             self.get_device(task['deviceId']).set_sound_program(task['payload'])
                         elif param == 'radio':
-                            self.get_device(task['deviceId']).set_radio_station(task['payload'])
+                            self.get_device(task['deviceId']).set_radio_station(int(task['payload']))
                         elif param == 'playback':
                             self.get_device(task['deviceId']).set_playback_status(task['payload'])
                         elif param == 'update':
-                            self.get_device(task['deviceId']).get_device_status()
-                            self.get_device(task['deviceId']).ensure_mode()
+                            device = self.get_device(task['deviceId'])
+                            changes = device.get_device_status()
+                            device.ensure_mode()
+                            for param in changes:
+                                self.__messageQ.put(self.prepare_message(task['deviceId'], param, changes[param]))
+                                self.logger.debug("Change:%s" % param)
 
 
         return

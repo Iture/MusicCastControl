@@ -1,7 +1,7 @@
-import requests
-import socket
-import select
 import logging
+import select
+
+import requests
 
 
 class MusicCastAPI:
@@ -34,29 +34,25 @@ class MusicCastAPI:
     def update_features(self):
         url = "%s/system/getFeatures" % self.base_url
         self.logger.debug("Trying to update features")
-        self.logger.debug("Request url: %s" % url)
-        try:
-            result = requests.get(url)
-            if result.status_code == 200:
-                r = result.json()
-                self.inputs = r['zone'][0]['input_list']
-                self.sound_programs = r['zone'][0]['sound_program_list']
-                self.logger.debug("Features updated suceessfully")
-        except Exception as ex:
-            self.logger.error("Features update problem: %s" % ex)
+
+        res = self.__issue_request(url)
+        if res is not None:
+            self.inputs = res['zone'][0]['input_list']
+            self.sound_programs = res['zone'][0]['sound_program_list']
+            self.logger.debug("Features updated suceessfully")
 
     def get_device_status(self):
         url = "%s/%s/getStatus" % (self.base_url, self.zone)
         self.logger.debug("Trying to update status")
-        self.logger.debug("Request url: %s" % url)
-
-        try:
-            result = requests.get(url, headers=self.headers)
-            if result.status_code == 200 and result.json()['response_code'] == 0:
-                self.status = result.json()
-        except Exception as ex:
-            self.logger.error("Features update problem: %s" % ex)
-        return
+        out = {}
+        res = self.__issue_request(url)
+        if res is not None:
+            for param in res:
+                if (param not in self.status) or (res[param] != self.status[param]):
+                    out[param] = res[param]
+            self.status = res
+            self.logger.info("Status updated successfully")
+        return out
 
     def get_event(self, timeout=1):
         msg = None
@@ -64,7 +60,7 @@ class MusicCastAPI:
             try:
                 result = select.select([self.__socket], [], [], timeout)
                 if result[0]:
-                    msg,addr = result[0][0].recvfrom(1024)
+                    msg, addr = result[0][0].recvfrom(1024)
                     msg=str(msg)
                     self.logger.debug("Message received:%s from %s" % (msg,addr))
             except Exception as ex:
@@ -81,6 +77,8 @@ class MusicCastAPI:
             self.set_sound_program(pref)
             self.logger.debug("Reset mode to :%s" % pref)
 
+    # TODO poprawic issue_request
+
     def set_power_state(self, power_state):
         url = "%s/%s/setPower?power=%s" % (self.base_url, self.zone, power_state)
         self.logger.debug("Trying to set power mode to:%s" % power_state)
@@ -93,6 +91,8 @@ class MusicCastAPI:
         except Exception as ex:
             self.logger.error("Problem setting power state: %s" % ex)
         return
+
+    # TODO poprawic issue_request
 
     def set_input(self, input_name):
         if input_name in self.inputs:
@@ -108,6 +108,8 @@ class MusicCastAPI:
                 self.logger.error("Problem setting input: %s" % ex)
         return
 
+    #TODO poprawic issue_request
+
     def set_sound_program(self, sound_program):
         if sound_program in self.sound_programs:
             url = "%s/%s/setSoundProgram?program=%s" % (self.base_url, self.zone, sound_program)
@@ -122,6 +124,8 @@ class MusicCastAPI:
                 self.logger.error("Problem setting sound program: %s" % ex)
 
         return
+
+    #TODO poprawic issue_request
 
     def set_radio_station(self, preset_index):
         url = "%s/netusb/recallPreset?zone=%s&num=%s" % (self.base_url, self.zone, preset_index)
@@ -145,38 +149,35 @@ class MusicCastAPI:
         if status in playback_states:
             url = "%s/netusb/setPlayback?playback=%s" % (self.base_url, status)
             self.logger.debug("Trying to set playback status to :%s" % status)
-            self.logger.debug("Request url: %s" % url)
-            try:
-                result = requests.get(url)
-                if result.status_code == 200 and result.json()['response_code'] == 0:
-                    self.logger.debug("Playback status set to: %s" % status)
-            except Exception as ex:
-                self.logger.error("Problem setting playback status: %s" % ex)
+            res = self.__issue_request(url)
+            if res is not None:
+                self.logger.info("Playback status set to:%s" % status)
         return
 
     def set_volume(self, volume):
         url = "%s/%s/setVolume?volume=%s" % (self.base_url, self.zone, volume)
         self.logger.debug("Trying to set volume to :%s" % volume)
-        self.logger.debug("Request url: %s" % url)
 
-        try:
-            result = requests.get(url)
-            if result.status_code == 200 and result.json()['response_code'] == 0:
-                self.status['volume'] = volume
-        except Exception as ex:
-            self.logger.error("Problem setting volume: %s" % ex)
-        return
+        res = self.__issue_request(url)
+        if res is not None:
+            self.status['volume'] = volume
 
     def set_mute(self, state):
         url = "%s/%s/setMute?enable=%s" % (self.base_url, self.zone, state)
         self.logger.debug("Trying to set mute state to :%s" % state)
-        self.logger.debug("Request url: %s" % url)
 
         if state in ['on', 'off']:
-            try:
-                result = requests.get(url)
-                if result.status_code == 200 and result.json()['response_code'] == 0:
-                    self.status['mute'] = state
-            except Exception as ex:
-                self.logger.error("Problem setting mute: %s" % ex)
+            res = self.__issue_request(url)
+            if res is not None:
+                self.status['mute'] = state
         return
+
+    def __issue_request(self, url):
+        self.logger.debug("Request url: %s" % url)
+        try:
+            result = requests.get(url)
+            if result.status_code == 200 and result.json()['response_code'] == 0:
+                return result.json()
+        except Exception as ex:
+            self.logger.error("Problem during: %s" % ex)
+            return None
