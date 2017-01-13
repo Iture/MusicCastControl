@@ -20,7 +20,6 @@ class MusicCastWorker(multiprocessing.Process):
         return
 
     def run(self):
-
         while True:
             if time.time() > self.last_update+self.update_interval:
                 self.update_devices()
@@ -32,7 +31,7 @@ class MusicCastWorker(multiprocessing.Process):
                         if task['method'] == 'command' and task['payload'] != '':
                             param = task['param']
                             if param == 'volume':
-                                self.get_device(task['deviceId']).set_volume(int(task['payload']))
+                                self.get_device(task['deviceId']).set_volume(int(float(task['payload'])))
                             elif param == 'power':
                                 self.get_device(task['deviceId']).set_power_state(task['payload'])
                             elif param == 'input':
