@@ -6,8 +6,7 @@ import MusicCastAPI
 
 
 class MusicCastWorker(multiprocessing.Process):
-
-    def __init__(self,messageQ, commandQ, config):
+    def __init__(self, messageQ, commandQ, config):
         self.logger = logging.getLogger('MusicCast.Worker')
         self.__messageQ = messageQ
         self.__commandQ = commandQ
@@ -28,30 +27,31 @@ class MusicCastWorker(multiprocessing.Process):
                 self.last_update=time.time()
             if not self.__commandQ.empty():
                 while not self.__commandQ.empty():
-                    task = self.__commandQ.get()
-                    if task['method'] == 'command':
-                        param = task['param']
-                        if param == 'volume':
-                            self.get_device(task['deviceId']).set_volume(int(task['payload']))
-                        elif param == 'power':
-                            self.get_device(task['deviceId']).set_power_state(task['payload'])
-                        elif param == 'input':
-                            self.get_device(task['deviceId']).set_input(task['payload'])
-                        elif param == 'sound_program':
-                            self.get_device(task['deviceId']).set_sound_program(task['payload'])
-                        elif param == 'radio':
-                            self.get_device(task['deviceId']).set_radio_station(int(task['payload']))
-                        elif param == 'playback':
-                            self.get_device(task['deviceId']).set_playback_status(task['payload'])
-                        elif param == 'update':
-                            device = self.get_device(task['deviceId'])
-                            changes = device.get_device_status()
-                            device.ensure_mode()
-                            for param in changes:
-                                self.__messageQ.put(self.prepare_message(task['deviceId'], param, changes[param]))
-                                self.logger.debug("Change:%s" % param)
-
-
+                    try:
+                        task = self.__commandQ.get()
+                        if task['method'] == 'command' and task['payload'] != '':
+                            param = task['param']
+                            if param == 'volume':
+                                self.get_device(task['deviceId']).set_volume(int(task['payload']))
+                            elif param == 'power':
+                                self.get_device(task['deviceId']).set_power_state(task['payload'])
+                            elif param == 'input':
+                                self.get_device(task['deviceId']).set_input(task['payload'])
+                            elif param == 'sound_program':
+                                self.get_device(task['deviceId']).set_sound_program(task['payload'])
+                            elif param == 'radio':
+                                self.get_device(task['deviceId']).set_radio_station(int(task['payload']))
+                            elif param == 'playback':
+                                self.get_device(task['deviceId']).set_playback_status(task['payload'])
+                            elif param == 'update':
+                                device = self.get_device(task['deviceId'])
+                                device.ensure_mode()
+                                changes = device.get_device_status()
+                                for param in changes:
+                                    self.__messageQ.put(self.prepare_message(task['deviceId'], param, changes[param]))
+                                    self.logger.debug("Change:%s" % param)
+                    except Exception as ex:
+                        self.logger.error(("Error ocurred while executing command:%s" % ex))
         return
 
     def get_device(self,device_id):

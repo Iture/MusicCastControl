@@ -3,7 +3,6 @@ import multiprocessing
 import time
 
 import paho.mqtt.client as mqtt
-import paho.mqtt.publish as publish
 
 
 class MQTTClient(multiprocessing.Process):
@@ -18,7 +17,7 @@ class MQTTClient(multiprocessing.Process):
         self.mqttDataPrefix = config['mqtt_prefix']
         self.mqtt_host = config['mqtt_host']
         self.mqtt_port = config['mqtt_port']
-        self._mqttConn = mqtt.Client(client_id='MusicCast-Controller'
+        self._mqttConn = mqtt.Client(client_id='MusicCast-Controller_'
                                                '', clean_session=True, userdata=None)
 
         self._mqttConn.connect(self.mqtt_host, port=self.mqtt_port, keepalive=120)
@@ -42,7 +41,7 @@ class MQTTClient(multiprocessing.Process):
         self.logger.debug("Message " + str(mid) + " published.")
 
     def _on_message(self, client, userdata, message):
-        self.logger.debug("Message received: %s" % (message))
+        self.logger.debug("Message received: %s:%s" % (message.topic, message.payload))
 
         data = message.topic.replace(self.mqttDataPrefix + "/", "").split("/")
         data_out = {
@@ -54,15 +53,18 @@ class MQTTClient(multiprocessing.Process):
             'qos': 1,
             'timestamp': time.time()
         }
-        print (data_out)
+
         self.commandQ.put(data_out)
+        if message.retain != 0:
+            (rc, final_mid) = self._mqttConn.publish(message.topic, None, 1, True)
+            self.logger.info("Clearing topic " + message.topic)
 
     def publish(self, task):
         if task['timestamp'] <= time.time() + self.message_timeout:
             topic = "%s/%s/%s" % (self.mqttDataPrefix, task['deviceId'], task['param'])
             try:
                 if task['payload'] is not None:
-                    publish.single(topic, hostname=self.mqtt_host, port=self.mqtt_port, payload=task['payload'])
+                    self._mqttConn.publish(topic, payload=task['payload'])
                     self.logger.debug('Sending:%s' % (task))
             except Exception as e:
                 self.logger.error('Publish problem: %s' % (e))
@@ -74,6 +76,7 @@ class MQTTClient(multiprocessing.Process):
             while not self.messageQ.empty():
                 task = self.messageQ.get()
                 if task['method'] == 'publish':
+                    self.logger.debug("Publishing:%s" % task)
                     self.publish(task)
             time.sleep(0.01)
             self._mqttConn.loop()
