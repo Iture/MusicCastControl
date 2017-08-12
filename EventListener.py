@@ -13,6 +13,7 @@ class EventListener (multiprocessing.Process):
         self.__commandQ=commandQ
         self.logger.debug("Opening listening socket")
         self.event_port=config['mc_notification_port']
+        self.devices = config['mc_devices']
         try:
             self.__socket = socket.socket(socket.AF_INET,  # Internet
                                           socket.SOCK_DGRAM)  # UDP
@@ -24,16 +25,21 @@ class EventListener (multiprocessing.Process):
     def run(self):
         while True:
             addr, message = self.get_event(1)
-            if message and 'main' in str(message):
-                data_out = {
+#            if message and 'main' in str(message):
+# Need to find which deviceId it is, we have the zone in the event and the IP address
+            if message:
+                for dev in self.devices:
+                    if self.devices[dev]['ip'] == addr[0] and self.devices[dev]['zone'] in str(message):
+                        devid = dev
+                        data_out = {
                     'method': 'command',
                     'topic': message,
-                    'deviceId': addr[0],
+                    'deviceId': devid,
                     'param': 'update',
                     'payload': 0,
                     'qos': 1,
                     'timestamp': time.time()
-                }
+                     }
                 self.logger.debug("update message:%s" % data_out)
                 self.__commandQ.put(data_out)
 

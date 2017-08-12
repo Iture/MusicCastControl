@@ -1,9 +1,14 @@
 {
-  "mqtt_host":"malinka.home",
-  "mqtt_port":1883,
-  "mqtt_message_timeout":60,
-  "mqtt_prefix":"/data/MusicCast",
-  "mc_devices":["172.22.0.40"],
-  "mc_notification_port":5005,
-  "mc_status_update_interval":60
+    "mqtt_host": "localhost",
+    "mqtt_port": 1883,
+    "mqtt_message_timeout": 60,
+    "mqtt_prefix": "MusicCast",
+    "mc_devices": {
+        "family_room": { "ip": "192.168.1.147", "zone": "main" },
+        "kitchen": { "ip": "192.168.1.147", "zone": "zone2" },
+        "dining_room": { "ip": "192.168.1.147", "zone": "zone3" },
+        "basement": { "ip": "192.168.1.150", "zone": "main" }
+    },
+    "mc_notification_port": 5005,
+    "mc_status_update_interval": 300
 }

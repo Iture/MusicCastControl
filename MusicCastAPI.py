@@ -5,7 +5,7 @@ import requests
 
 
 class MusicCastAPI:
-    def __init__(self, host, zone='main', notification_port=None):
+    def __init__(self, host, zone='main', notification_port=5005):
         self.logger = logging.getLogger('MusicCastAPI')
         self.host = host
         self.zone = zone
@@ -13,8 +13,6 @@ class MusicCastAPI:
         self.base_url = "http://%s/YamahaExtendedControl/v1" % self.host
         self.inputs = ['tv', 'usb', 'net_radio', 'spotify', 'hdmi', 'server', 'bluetooth']
         self.sound_programs = ['stereo', 'movie', 'music']
-
-        self.update_features()
 
         self.event_port = notification_port
         self.headers = {}
@@ -29,6 +27,9 @@ class MusicCastAPI:
             'bluetooth': ['stereo', 'music'],
             'airplay': ['stereo', 'music']
         }
+
+        self.update_features()
+
         self.__socket = None
 
     def update_features(self):
@@ -51,6 +52,7 @@ class MusicCastAPI:
                 if (param not in self.status) or (res[param] != self.status[param]):
                     out[param] = res[param]
             self.status = res
+        #    out.pop('tone_control',None)
             self.logger.info("Status updated successfully")
         return out
 
@@ -68,8 +70,7 @@ class MusicCastAPI:
         return msg
 
     def ensure_mode(self):
-        if self.status['input'] in self.preferred_modes \
-                and self.status['sound_program'] not in self.preferred_modes[self.status['input']]:
+        if self.status['input'] in self.preferred_modes and self.status['sound_program'] not in self.preferred_modes[self.status['input']]:
             if type(self.preferred_modes[self.status['input']]) == list:
                 pref = self.preferred_modes[self.status['input']][0]
             else:
@@ -175,7 +176,7 @@ class MusicCastAPI:
     def __issue_request(self, url):
         self.logger.debug("Request url: %s" % url)
         try:
-            result = requests.get(url)
+            result = requests.get(url,headers=self.headers)
             if result.status_code == 200 and result.json()['response_code'] == 0:
                 return result.json()
         except Exception as ex:
