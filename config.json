@@ -1,5 +1,5 @@
 {
-    "mqtt_host": "localhost",
+    "mqtt_host": "192.168.1.241",
     "mqtt_port": 1883,
     "mqtt_message_timeout": 60,
     "mqtt_prefix": "MusicCast",
