@@ -1,2 +1,3 @@
 tornado
 paho-mqtt
+requests
