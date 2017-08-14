@@ -23,7 +23,10 @@ class MusicCastWorker(multiprocessing.Process):
 
     def run(self):
         while True:
+            #Added sleep to reduce CPU usage
+            time.sleep(0.01)
             if time.time() > self.last_update+self.update_interval:
+                self.logger.debug("Updating devices")
                 self.update_devices()
                 self.last_update=time.time()
             if not self.__commandQ.empty():
