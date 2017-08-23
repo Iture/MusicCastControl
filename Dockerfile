@@ -7,6 +7,7 @@ MAINTAINER Keith Berry "keithwberry@gmail.com"
 WORKDIR /usr/src/app
 
 ADD https://github.com/berryk/MusicCastControl/archive/master.tar.gz .
+RUN gunzip -c master.tar.gz | tar xvf -
 
 WORKDIR /usr/src/app/MusicCastControl-master
 
