@@ -49,7 +49,7 @@ class MusicCastWorker(multiprocessing.Process):
                                 self.get_device(task['deviceId']).set_playback_status(task['payload'])
                             elif param == 'update':
                                 device = self.get_device(task['deviceId'])
-                                device.ensure_mode()
+                                #device.ensure_mode()
                                 changes = device.get_device_status()
                                 for param in changes:
                                     self.__messageQ.put(self.prepare_message(task['deviceId'], param, changes[param]))
@@ -68,7 +68,7 @@ class MusicCastWorker(multiprocessing.Process):
         for device_id in self.devices:
             device=self.devices[device_id]
             out = device.get_device_status()
-            device.ensure_mode()
+            #device.ensure_mode()
             for param in out:
                 self.__messageQ.put(self.prepare_message(device_id, param, device.status[param]))
 
