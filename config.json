@@ -4,10 +4,10 @@
     "mqtt_message_timeout": 60,
     "mqtt_prefix": "MusicCast",
     "mc_devices": {
-        "family_room": { "ip": "family-room-receiver.lan", "zone": "main" },
-        "kitchen": { "ip": "family-room-receiver.lan", "zone": "zone2" },
-        "dining_room": { "ip": "family-room-receiver.lan", "zone": "zone3" },
-        "basement": { "ip": "basement-receiver.lan", "zone": "main" }
+        "family_room": { "ip": "192.168.1.203", "zone": "main" },
+        "kitchen": { "ip": "192.168.1.203", "zone": "zone2" },
+        "dining_room": { "ip": "192.168.1.203", "zone": "zone3" },
+        "basement": { "ip": "192.168.1.205", "zone": "main" }
     },
     "mc_notification_port": 5005,
     "mc_status_update_interval": 300
