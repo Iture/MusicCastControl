@@ -16,12 +16,17 @@ class MusicCastWorker(multiprocessing.Process):
         self.update_interval = config['mc_status_update_interval']
         multiprocessing.Process.__init__(self)
         for dev in config['mc_devices']:
-            self.get_device(dev)
+            ip = config['mc_devices'][dev]['ip']
+            zone = config['mc_devices'][dev]['zone']
+            self.get_device(dev,ip,zone)
         return
 
     def run(self):
         while True:
+            #Added sleep to reduce CPU usage
+            time.sleep(0.01)
             if time.time() > self.last_update+self.update_interval:
+                self.logger.debug("Updating devices")
                 self.update_devices()
                 self.last_update=time.time()
             if not self.__commandQ.empty():
@@ -44,7 +49,7 @@ class MusicCastWorker(multiprocessing.Process):
                                 self.get_device(task['deviceId']).set_playback_status(task['payload'])
                             elif param == 'update':
                                 device = self.get_device(task['deviceId'])
-                                device.ensure_mode()
+                                #device.ensure_mode()
                                 changes = device.get_device_status()
                                 for param in changes:
                                     self.__messageQ.put(self.prepare_message(task['deviceId'], param, changes[param]))
@@ -53,17 +58,18 @@ class MusicCastWorker(multiprocessing.Process):
                         self.logger.error(("Error ocurred while executing command:%s" % ex))
         return
 
-    def get_device(self,device_id):
+    def get_device(self,device_id,ip=None,zone=None):
+        self.logger.debug(device_id)
         if not device_id in self.devices:
-            self.devices[device_id]=MusicCastAPI.MusicCastAPI(device_id, notification_port=self.notification_port)
+            self.devices[device_id]=MusicCastAPI.MusicCastAPI(ip, zone, notification_port=self.notification_port)
         return self.devices[device_id]
 
     def update_devices(self):
         for device_id in self.devices:
             device=self.devices[device_id]
-            device.get_device_status()
-            device.ensure_mode()
-            for param in device.status:
+            out = device.get_device_status()
+            #device.ensure_mode()
+            for param in out:
                 self.__messageQ.put(self.prepare_message(device_id, param, device.status[param]))
 
         return
