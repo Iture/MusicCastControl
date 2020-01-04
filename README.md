@@ -1,15 +1,45 @@
 # MusicCastControl
 MQTT interface for Yamaha MusicCast
 
-Receives events from the MusicCast device when a value changes and publishes them to MQTT. 
+Receives events from the MusicCast device when a value changes and publishes them to MQTT.
 
-Publishes topics in the format: 
+
+## Get started
+
+Clone the repository:
+
+```
+git clone git@github.com:Iture/MusicCastControl.git
+```
+
+Create and activate a virtual environment:
+
+```
+cd MusicCastControl
+python3 -m venv env
+source env/bin/activate
+```
+
+Edit the `config.json` file according to your own requirements, paying attention to:
+
+* `"mqtt_host"`
+* `"mc_devices"`
+
+Run:
+
+```
+python3 MusicCastController.py
+```
+
+## Technical reference
+
+Publishes topics in the format:
 
 MusicCast/friendly_name/power
 
-To set a value, use: 
+To set a value, use:
 
-MusicCast/friendly_name/power/set 
+MusicCast/friendly_name/power/set
 
 Example values from a Yamaha A2060 (Zone 3 with a friendly_name of dining_room):
 
@@ -27,7 +57,3 @@ MusicCast/dining_room/disable_flags:0
 ```
 
 friendly_names, ip addresses and zones are defined in config.json
-
-To start run: 
-
-python3 MusicCastController.py
